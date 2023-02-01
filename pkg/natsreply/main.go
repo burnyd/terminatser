@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"time"
 
 	"terminatser/pkg/eapi"
@@ -33,19 +34,6 @@ func (c Conn) Eapi() string {
 	return dev.Connect()
 }
 
-/*func (c Conn) Sub(nc nats.Conn, subject string) {
-	s, _ := nc.Subscribe(subject, func(msg *nats.Msg) {
-		//Need to pass data into eAPI Here in some sort of function?
-		//Need to send the response via natsresponse pkg here
-
-		//r := c.Eapi()
-		//msg.Respond([]byte(r))
-		msg.Respond([]byte("I did it"))
-
-	})
-
-}*/
-
 func (c Conn) StartReply(natsurl string) {
 	MySubject, err := os.Hostname()
 	if err != nil {
@@ -55,23 +43,39 @@ func (c Conn) StartReply(natsurl string) {
 	if MySubject == "" {
 		log.Fatal("Empty env var " + MySubject)
 	}
-	nc, err := nats.Connect(natsurl)
+	opts := []nats.Option{nats.Name(MySubject)}
+	opts = setupConnOptions(opts)
+	nc, err := nats.Connect(natsurl, opts...)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defer nc.Close()
-
-	sub, _ := nc.Subscribe(MySubject, func(msg *nats.Msg) {
+	nc.Subscribe(MySubject, func(msg *nats.Msg) {
 		r := c.Eapi()
 		msg.Respond([]byte(r))
 	})
 
-	//Need to figure out how to block on this portion.
+	nc.Flush()
 
-	time.Sleep(45 * time.Second)
+	runtime.Goexit()
+}
 
-	sub.Unsubscribe()
+func setupConnOptions(opts []nats.Option) []nats.Option {
+	totalWait := 10 * time.Minute
+	reconnectDelay := time.Second
+
+	opts = append(opts, nats.ReconnectWait(reconnectDelay))
+	opts = append(opts, nats.MaxReconnects(int(totalWait/reconnectDelay)))
+	opts = append(opts, nats.DisconnectHandler(func(nc *nats.Conn) {
+		log.Printf("Disconnected: will attempt reconnects for %.0fm", totalWait.Minutes())
+	}))
+	opts = append(opts, nats.ReconnectHandler(func(nc *nats.Conn) {
+		log.Printf("Reconnected [%s]", nc.ConnectedUrl())
+	}))
+	opts = append(opts, nats.ClosedHandler(func(nc *nats.Conn) {
+		log.Fatalf("Exiting: %v", nc.LastError())
+	}))
+	return opts
 }
 
 func (c Conn) Init(natsurl string) {
