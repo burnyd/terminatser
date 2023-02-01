@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"terminatser/pkg/gnmiclient"
+	"terminatser/pkg/natsreply"
 
 	"github.com/aristanetworks/goarista/gnmi"
 )
@@ -15,8 +16,10 @@ func main() {
 	gnmiuser := flag.String("gnmiuser", "admin", "username for gnmi")
 	gnmipassword := flag.String("gnmipassword", "admin", "password for gnmi")
 	gnmipath := flag.String("gnmipath", "/", "path for gnmi")
+	ShowCmds := flag.String("showcommands", "show version", "Commands to execute if used")
 
 	flag.Parse()
+	//Create gNMI Connection
 	s := gnmiclient.PathOpts{
 		Paths:  []string{*gnmipath},
 		Origin: "openconfig",
@@ -31,5 +34,15 @@ func main() {
 			ClientName: *clientname,
 		},
 	}
+	// Start the nats listener
+	nr := natsreply.Conn{
+		Transport: "http",
+		Host:      s.GnmiCfg.Addr,
+		Password:  s.GnmiCfg.Username,
+		Username:  s.GnmiCfg.Password,
+		Port:      80,
+		Cmds:      *ShowCmds,
+	}
+	nr.Init(s.NatsInfo.NatsUrls)
 	s.ClientgNMI()
 }

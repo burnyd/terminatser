@@ -66,12 +66,12 @@ func (p PathOpts) ClientgNMI() {
 					target = "(" + t + ") "
 				}
 				for _, update := range resp.Update.Update {
-					fmt.Printf("[%s] %sUpdate %s = %s\n",
-						t.Format(time.RFC3339Nano),
-						target,
-						path.Join(prefix, gnmi.StrPath(update.Path)),
-						gnmi.StrUpdateVal(update),
-					)
+					//fmt.Printf("[%s] %sUpdate %s = %s\n",
+					//	t.Format(time.RFC3339Nano),
+					//	target,
+					//	path.Join(prefix, gnmi.StrPath(update.Path)),
+					//	gnmi.StrUpdateVal(update),
+					//)
 					p.Target = target
 					p.Timestamp = t.Format(time.RFC3339Nano)
 					p.Path = path.Join(prefix, gnmi.StrPath(update.Path))
