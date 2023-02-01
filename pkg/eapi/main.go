@@ -27,6 +27,6 @@ func (c *Conn) Connect() string {
 		fmt.Println(err)
 	}
 
-	s := fmt.Sprintf("%v", runcommands)
+	s := fmt.Sprintf("%v", runcommands.Result)
 	return s
 }

@@ -1,6 +1,7 @@
 package natsreply
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -51,6 +52,9 @@ func (c Conn) StartReply(natsurl string) {
 	}
 
 	nc.Subscribe(MySubject, func(msg *nats.Msg) {
+		m := make(map[string]string)
+		_ = json.Unmarshal(msg.Data, &m)
+		c.Cmds = m["Commands"]
 		r := c.Eapi()
 		msg.Respond([]byte(r))
 	})
