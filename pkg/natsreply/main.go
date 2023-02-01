@@ -62,20 +62,13 @@ func (c Conn) StartReply(natsurl string) {
 
 	defer nc.Close()
 
-	/*go func() {
-		for {
-			c.Sub(*nc, MySubject)
-		}
-
-	}()*/
-	sub, _ := nc.Subscribe("burnyd", func(msg *nats.Msg) {
-		//msg.Respond([]byte("hello, I have responded to you "))
+	sub, _ := nc.Subscribe(MySubject, func(msg *nats.Msg) {
 		r := c.Eapi()
 		msg.Respond([]byte(r))
-		//msg.Respond([]byte("I did it"))
 	})
 
-	//sub.Unsubscribe()
+	//Need to figure out how to block on this portion.
+
 	time.Sleep(45 * time.Second)
 
 	sub.Unsubscribe()
